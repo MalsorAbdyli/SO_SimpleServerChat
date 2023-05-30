@@ -6,17 +6,7 @@ Group Members
 
 This project was developed by the following group members:
 
-Malsor Abdyli
-
-Olsa Fejzullahu
-
-Jeta Syla
-
-Hare Luma
-
-Yll Pajaziti
-
-
+Malsor Abdyli, Olsa Fejzullahu, Jeta Syla, Hare Luma, Yll Pajaziti.
 
 Features
 
