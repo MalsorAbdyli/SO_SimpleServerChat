@@ -86,3 +86,58 @@ void handle_client_message(int client_index, char* message) {
         broadcast_message(clients[client_index].name, message);
     }
 }
+void* handle_client(void* client_socket_ptr) {
+    int client_socket = *(int*)client_socket_ptr;
+    char client_message[BUFFER_SIZE];
+
+    // lexo gjatesine e emrit te klientit
+    int name_length;
+    if (read(client_socket, &name_length, sizeof(name_length)) <= 0) {
+        perror("Dështoi leximi i gjatësisë së emrit të klientit");
+        close(client_socket);
+        pthread_exit(NULL);
+    }
+
+    // lexo emrin e klientit
+    if (read(client_socket, clients[client_count].name, name_length) <= 0) {
+        perror("Dështoi leximi i emrit të klientit");
+        close(client_socket);
+        pthread_exit(NULL);
+    } else {
+        clients[client_count].name[name_length] = '\0'; 
+    }
+
+    printf("%s është në linjë.\n", clients[client_count].name);
+
+    // inkrementoje shumen e klientit
+    pthread_mutex_lock(&mutex);
+    int current_client_count = client_count;
+    client_count++;
+    pthread_mutex_unlock(&mutex);
+
+    while (1) {
+        memset(client_message, 0, sizeof(client_message));
+        if (read(client_socket, client_message, sizeof(client_message)) <= 0) {
+            perror("Dështoi lexuimi i mesazhit të klientit.");
+            close(client_socket);
+
+            pthread_mutex_lock(&mutex);
+            // largo klientin prej vargut
+            for (int i = 0; i < client_count; i++) {
+                if (clients[i].socket == client_socket) {
+                    printf("%s është jashtë linje.\n", clients[i].name);
+                    for (int j = i; j < client_count - 1; j++) {
+                        clients[j] = clients[j + 1];
+                    }
+                    client_count--;
+                    break;
+                }
+            }
+            pthread_mutex_unlock(&mutex);
+
+            pthread_exit(NULL);
+        }
+
+        handle_client_message(current_client_count, client_message);
+    }
+}
