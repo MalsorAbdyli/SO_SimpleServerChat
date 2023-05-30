@@ -10,6 +10,19 @@
 
 #define BUFFER_SIZE 1024
 
+void* receive_messages(void* socket_ptr) {
+    int socket = *(int*)socket_ptr;
+    char server_message[BUFFER_SIZE];
+
+    while (1) {
+        memset(server_message, 0, sizeof(server_message));
+        if (read(socket, server_message, sizeof(server_message)) > 0) {
+            printf("%s\n", server_message);
+        }
+    }
+
+    pthread_exit(NULL);
+}
 
 int main() {
     int client_socket;
