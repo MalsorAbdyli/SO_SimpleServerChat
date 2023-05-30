@@ -43,3 +43,46 @@ void send_private_message(char* sender_name, char* recipient_name, char* message
     }
     pthread_mutex_unlock(&mutex);
 }
+void handle_client_message(int client_index, char* message) {
+    char command[20];
+    char recipient[20];
+    char client_message[BUFFER_SIZE];
+
+    if (message[0] == '/') {
+       sscanf(message, "/%s %[^ ] %[^\n]", command, recipient, client_message);
+
+        if (strcmp(command, "msg") == 0) {
+            for (int i = 0; i < client_count; i++) {
+                if (strcmp(clients[i].name, recipient) == 0) {
+                    send_private_message(clients[client_index].name, clients[i].name, client_message);
+                    return;
+                }
+            }
+            
+            // nese pranuesi nuk eshte gjetur, lajmero derguesin
+            char error_message[BUFFER_SIZE];
+            snprintf(error_message, BUFFER_SIZE, "Përdoruesi '%s' nuk është gjetur.", recipient);
+            write(clients[client_index].socket, error_message, strlen(error_message) + 1);
+        } else if (strcmp(command, "quit") == 0) {
+            printf("%s është jashtë linje.\n", clients[client_index].name);
+            close(clients[client_index].socket);
+
+            pthread_mutex_lock(&mutex);
+            // largo klientin nga vargu
+            for (int i = client_index; i < client_count - 1; i++) {
+                clients[i] = clients[i + 1];
+            }
+            client_count--;
+            pthread_mutex_unlock(&mutex);
+        } else if (strcmp(command, "list") == 0) {
+            printf("Klientët në linjë:\n");
+            pthread_mutex_lock(&mutex);
+            for (int i = 0; i < client_count; i++) {
+                printf("- %s\n", clients[i].name);
+            }
+            pthread_mutex_unlock(&mutex);
+        }
+    } else {
+        broadcast_message(clients[client_index].name, message);
+    }
+}
